@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build: .
+    command: python -m services.product_service.main
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/product_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  customer-service:
+    build: .
+    command: python -m services.customer_service.main
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/customer_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  inventory-service:
+    build: .
+    command: python -m services.inventory_service.main
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/inventory_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pricing-service:
+    build: .
+    command: python -m services.pricing_service.main
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/pricing_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  order-service:
+    build: .
+    command: python -m services.order_service.main
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/order_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build: .
+    command: python -m services.gateway_service.main
+    ports:
+      - "8000:8000"
+    depends_on:
+      product-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      pricing-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+
+volumes:
+  postgres_data:
