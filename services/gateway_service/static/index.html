@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microservices Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242736;
+    --border: #2e3144;
+    --text: #e4e6f0;
+    --text2: #9194a8;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00b894;
+    --red: #e17055;
+    --orange: #fdcb6e;
+    --blue: #74b9ff;
+    --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar h1 {
+    font-size: 16px;
+    padding: 20px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+  .sidebar nav { flex: 1; padding: 8px; }
+  .sidebar nav button {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text2);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+  }
+  .sidebar nav button:hover { background: var(--surface2); color: var(--text); }
+  .sidebar nav button.active { background: var(--accent); color: #fff; }
+  .sidebar nav button .icon { font-size: 18px; width: 24px; text-align: center; }
+
+  /* Main */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .main header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    gap: 24px;
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    flex: 1;
+    min-width: 0;
+  }
+  .panel h3 {
+    font-size: 14px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Forms */
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-row { display: flex; gap: 8px; }
+  .form-row .form-group { flex: 1; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { opacity: 0.85; }
+  .btn-warning { background: var(--orange); color: #000; }
+  .btn-warning:hover { opacity: 0.85; }
+  .btn-info { background: var(--blue); color: #000; }
+  .btn-info:hover { opacity: 0.85; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  /* Response */
+  .response-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 12px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+  .response-box.success { border-color: var(--green); }
+  .response-box.error { border-color: var(--red); }
+
+  /* Status badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge-pending { background: var(--orange); color: #000; }
+  .badge-confirmed { background: var(--blue); color: #000; }
+  .badge-shipped { background: var(--accent2); color: #000; }
+  .badge-delivered { background: var(--green); color: #fff; }
+
+  /* Section visibility */
+  .section { display: none; }
+  .section.active { display: flex; }
+
+  /* Separator */
+  .sep { margin: 16px 0; border-top: 1px solid var(--border); }
+
+  /* Order lines builder */
+  .order-line {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .order-line .form-row { margin-bottom: 0; }
+
+  /* Loading spinner */
+  .loading::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Table */
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .result-table th, .result-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-table th {
+    color: var(--text2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .result-table tr:hover td { background: var(--surface2); }
+  .copy-id {
+    cursor: pointer;
+    color: var(--accent2);
+    font-family: monospace;
+    font-size: 12px;
+  }
+  .copy-id:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h1>Microservices</h1>
+  <nav>
+    <button class="active" onclick="showSection('products')" id="nav-products">
+      <span class="icon">&#128722;</span> Products
+    </button>
+    <button onclick="showSection('customers')" id="nav-customers">
+      <span class="icon">&#128100;</span> Customers
+    </button>
+    <button onclick="showSection('warehouses')" id="nav-warehouses">
+      <span class="icon">&#127970;</span> Warehouses
+    </button>
+    <button onclick="showSection('inventory')" id="nav-inventory">
+      <span class="icon">&#128230;</span> Inventory
+    </button>
+    <button onclick="showSection('pricing')" id="nav-pricing">
+      <span class="icon">&#128176;</span> Pricing
+    </button>
+    <button onclick="showSection('orders')" id="nav-orders">
+      <span class="icon">&#128203;</span> Orders
+    </button>
+  </nav>
+</div>
+
+<div class="main">
+  <header id="page-title">Products</header>
+
+  <!-- ═══════════ PRODUCTS ═══════════ -->
+  <div class="content section active" id="section-products">
+    <div class="panel">
+      <h3>Create Product</h3>
+      <div class="form-group">
+        <label>Name</label>
+        <input id="p-name" placeholder="MacBook Pro 14">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="p-desc" placeholder="Laptop Apple M3, 16Go RAM"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="p-cat">
+          <option value="electronics">Electronics</option>
+          <option value="books">Books</option>
+          <option value="clothing">Clothing</option>
+          <option value="food">Food</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createProduct()">Create</button>
+      </div>
+      <div id="p-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Get Product</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product ID</label>
+          <input id="p-get-id" placeholder="uuid...">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getProduct()">Get</button>
+      </div>
+      <div id="p-get-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Update Product</h3>
+      <div class="form-group">
+        <label>Product ID</label>
+        <input id="p-up-id" placeholder="uuid...">
+      </div>
+      <div class="form-group">
+        <label>Name (optional)</label>
+        <input id="p-up-name" placeholder="New name...">
+      </div>
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <textarea id="p-up-desc" placeholder="New description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Category (optional)</label>
+        <select id="p-up-cat">
+          <option value="">-- No change --</option>
+          <option value="electronics">Electronics</option>
+          <option value="books">Books</option>
+          <option value="clothing">Clothing</option>
+          <option value="food">Food</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Available</label>
+        <select id="p-up-avail">
+          <option value="">-- No change --</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-warning" onclick="updateProduct()">Update</button>
+      </div>
+      <div id="p-up-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="p-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CUSTOMERS ═══════════ -->
+  <div class="content section" id="section-customers">
+    <div class="panel">
+      <h3>Create Customer</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input id="c-fname" placeholder="Jean">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input id="c-lname" placeholder="Dupont">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input id="c-email" type="email" placeholder="jean@example.com">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createCustomer()">Create</button>
+      </div>
+      <div id="c-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Get Customer</h3>
+      <div class="form-group">
+        <label>Customer ID</label>
+        <input id="c-get-id" placeholder="uuid...">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getCustomer()">Get</button>
+      </div>
+      <div id="c-get-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="c-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ WAREHOUSES ═══════════ -->
+  <div class="content section" id="section-warehouses">
+    <div class="panel">
+      <h3>Create Warehouse</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input id="w-name" placeholder="Entrepot Paris">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input id="w-loc" placeholder="Paris, France">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createWarehouse()">Create</button>
+      </div>
+      <div id="w-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>All Warehouses</h3>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getAllWarehouses()">List All</button>
+      </div>
+      <div id="w-list-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="w-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ INVENTORY ═══════════ -->
+  <div class="content section" id="section-inventory">
+    <div class="panel">
+      <h3>Create Inventory</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product ID</label>
+          <input id="i-prod" placeholder="uuid...">
+        </div>
+        <div class="form-group">
+          <label>Warehouse ID</label>
+          <input id="i-wh" placeholder="uuid...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input id="i-qty" type="number" value="100">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createInventory()">Create</button>
+      </div>
+      <div id="i-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Get Inventory by Product</h3>
+      <div class="form-group">
+        <label>Product ID</label>
+        <input id="i-get-prod" placeholder="uuid...">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getInventory()">Get</button>
+      </div>
+      <div id="i-get-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Update Inventory</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Warehouse ID</label>
+          <input id="i-up-wh" placeholder="uuid...">
+        </div>
+        <div class="form-group">
+          <label>Product ID</label>
+          <input id="i-up-prod" placeholder="uuid...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>New Quantity</label>
+        <input id="i-up-qty" type="number" value="50">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-warning" onclick="updateInventory()">Update</button>
+      </div>
+      <div id="i-up-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="i-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PRICING ═══════════ -->
+  <div class="content section" id="section-pricing">
+    <div class="panel">
+      <h3>Create Pricing</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product ID</label>
+          <input id="pr-prod" placeholder="uuid...">
+        </div>
+        <div class="form-group">
+          <label>Price</label>
+          <input id="pr-price" type="number" step="0.01" value="0.00">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createPricing()">Create</button>
+      </div>
+      <div id="pr-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Get Pricing by Product</h3>
+      <div class="form-group">
+        <label>Product ID</label>
+        <input id="pr-get-prod" placeholder="uuid...">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getPricing()">Get</button>
+      </div>
+      <div id="pr-get-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="pr-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ ORDERS ═══════════ -->
+  <div class="content section" id="section-orders">
+    <div class="panel">
+      <h3>Create Order</h3>
+      <div class="form-group">
+        <label>Customer ID</label>
+        <input id="o-cust" placeholder="uuid...">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;">Order Lines</label>
+        <div id="o-lines-container">
+          <div class="order-line">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Product ID</label>
+                <input class="ol-prod" placeholder="uuid...">
+              </div>
+              <div class="form-group">
+                <label>Quantity</label>
+                <input class="ol-qty" type="number" value="1">
+              </div>
+              <div class="form-group">
+                <label>Unit Price</label>
+                <input class="ol-price" type="number" step="0.01" value="0.00">
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-success" onclick="addOrderLine()" style="margin-top:4px;">+ Add Line</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createOrder()">Create Order</button>
+      </div>
+      <div id="o-create-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Get Order</h3>
+      <div class="form-group">
+        <label>Order ID</label>
+        <input id="o-get-id" placeholder="uuid...">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-info" onclick="getOrder()">Get</button>
+      </div>
+      <div id="o-get-res" class="response-box" style="display:none"></div>
+
+      <div class="sep"></div>
+
+      <h3>Update Order Status</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Order ID</label>
+          <input id="o-up-id" placeholder="uuid...">
+        </div>
+        <div class="form-group">
+          <label>New Status</label>
+          <select id="o-up-status">
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-warning" onclick="updateOrder()">Update Status</button>
+      </div>
+      <div id="o-up-res" class="response-box" style="display:none"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Response Log</h3>
+      <div id="o-log" class="response-box" style="display:block; min-height:200px;">Waiting for actions...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TITLES = {
+  products: 'Products', customers: 'Customers', warehouses: 'Warehouses',
+  inventory: 'Inventory', pricing: 'Pricing', orders: 'Orders'
+};
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('page-title').textContent = TITLES[name];
+}
+
+function showRes(id, data, ok) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.className = 'response-box ' + (ok ? 'success' : 'error');
+  el.textContent = JSON.stringify(data, null, 2);
+}
+
+function appendLog(logId, method, path, status, data) {
+  const el = document.getElementById(logId);
+  const ts = new Date().toLocaleTimeString();
+  const ok = status < 400;
+  const entry = `[${ts}] ${method} ${path} -> ${status}\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(40)}\n`;
+  if (el.textContent === 'Waiting for actions...') el.textContent = '';
+  el.textContent = entry + el.textContent;
+  el.className = 'response-box ' + (ok ? 'success' : 'error');
+}
+
+async function api(method, path, body, resId, logId) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(path, opts);
+    let data;
+    try { data = await r.json(); } catch { data = null; }
+    showRes(resId, data, r.ok);
+    appendLog(logId, method, path, r.status, data);
+    return { status: r.status, data, ok: r.ok };
+  } catch (e) {
+    const err = { error: e.message };
+    showRes(resId, err, false);
+    appendLog(logId, method, path, 0, err);
+    return { status: 0, data: err, ok: false };
+  }
+}
+
+// ── PRODUCTS ─────────────────────────────
+async function createProduct() {
+  const body = {
+    name: document.getElementById('p-name').value,
+    description: document.getElementById('p-desc').value,
+    category: document.getElementById('p-cat').value,
+  };
+  const res = await api('POST', '/product', body, 'p-create-res', 'p-log');
+  if (res.ok && res.data && res.data.id) {
+    document.getElementById('p-get-id').value = res.data.id;
+    document.getElementById('p-up-id').value = res.data.id;
+  }
+}
+
+async function getProduct() {
+  const id = document.getElementById('p-get-id').value;
+  await api('GET', '/product/' + id, null, 'p-get-res', 'p-log');
+}
+
+async function updateProduct() {
+  const id = document.getElementById('p-up-id').value;
+  const body = {};
+  const name = document.getElementById('p-up-name').value;
+  const desc = document.getElementById('p-up-desc').value;
+  const cat = document.getElementById('p-up-cat').value;
+  const avail = document.getElementById('p-up-avail').value;
+  if (name) body.name = name;
+  if (desc) body.description = desc;
+  if (cat) body.category = cat;
+  if (avail !== '') body.available = avail === 'true';
+  await api('PUT', '/product/' + id, body, 'p-up-res', 'p-log');
+}
+
+// ── CUSTOMERS ────────────────────────────
+async function createCustomer() {
+  const body = {
+    first_name: document.getElementById('c-fname').value,
+    last_name: document.getElementById('c-lname').value,
+    email: document.getElementById('c-email').value,
+  };
+  const res = await api('POST', '/customer', body, 'c-create-res', 'c-log');
+  if (res.ok && res.data && res.data.id) {
+    document.getElementById('c-get-id').value = res.data.id;
+  }
+}
+
+async function getCustomer() {
+  const id = document.getElementById('c-get-id').value;
+  await api('GET', '/customer/' + id, null, 'c-get-res', 'c-log');
+}
+
+// ── WAREHOUSES ───────────────────────────
+async function createWarehouse() {
+  const body = {
+    name: document.getElementById('w-name').value,
+    location: document.getElementById('w-loc').value,
+  };
+  await api('POST', '/warehouse', body, 'w-create-res', 'w-log');
+}
+
+async function getAllWarehouses() {
+  await api('GET', '/warehouse', null, 'w-list-res', 'w-log');
+}
+
+// ── INVENTORY ────────────────────────────
+async function createInventory() {
+  const body = {
+    product_pk: document.getElementById('i-prod').value,
+    warehouse_pk: document.getElementById('i-wh').value,
+    quantity: parseInt(document.getElementById('i-qty').value),
+  };
+  await api('POST', '/inventory', body, 'i-create-res', 'i-log');
+}
+
+async function getInventory() {
+  const id = document.getElementById('i-get-prod').value;
+  await api('GET', '/inventory/' + id, null, 'i-get-res', 'i-log');
+}
+
+async function updateInventory() {
+  const wh = document.getElementById('i-up-wh').value;
+  const prod = document.getElementById('i-up-prod').value;
+  const body = { quantity: parseInt(document.getElementById('i-up-qty').value) };
+  await api('PATCH', '/inventory/' + wh + '/' + prod, body, 'i-up-res', 'i-log');
+}
+
+// ── PRICING ──────────────────────────────
+async function createPricing() {
+  const body = {
+    product_pk: document.getElementById('pr-prod').value,
+    price: parseFloat(document.getElementById('pr-price').value),
+  };
+  await api('POST', '/pricing', body, 'pr-create-res', 'pr-log');
+}
+
+async function getPricing() {
+  const id = document.getElementById('pr-get-prod').value;
+  await api('GET', '/pricing/' + id, null, 'pr-get-res', 'pr-log');
+}
+
+// ── ORDERS ───────────────────────────────
+function addOrderLine() {
+  const container = document.getElementById('o-lines-container');
+  const div = document.createElement('div');
+  div.className = 'order-line';
+  div.innerHTML = `
+    <div class="form-row">
+      <div class="form-group">
+        <label>Product ID</label>
+        <input class="ol-prod" placeholder="uuid...">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input class="ol-qty" type="number" value="1">
+      </div>
+      <div class="form-group">
+        <label>Unit Price</label>
+        <input class="ol-price" type="number" step="0.01" value="0.00">
+      </div>
+    </div>`;
+  container.appendChild(div);
+}
+
+async function createOrder() {
+  const lines = [];
+  const prods = document.querySelectorAll('.ol-prod');
+  const qtys = document.querySelectorAll('.ol-qty');
+  const prices = document.querySelectorAll('.ol-price');
+  for (let i = 0; i < prods.length; i++) {
+    lines.push({
+      product_pk: prods[i].value,
+      quantity: parseInt(qtys[i].value),
+      unit_price: parseFloat(prices[i].value),
+    });
+  }
+  const body = {
+    customer_pk: document.getElementById('o-cust').value,
+    lines: lines,
+  };
+  const res = await api('POST', '/order', body, 'o-create-res', 'o-log');
+  if (res.ok && res.data && res.data.id) {
+    document.getElementById('o-get-id').value = res.data.id;
+    document.getElementById('o-up-id').value = res.data.id;
+  }
+}
+
+async function getOrder() {
+  const id = document.getElementById('o-get-id').value;
+  await api('GET', '/order/' + id, null, 'o-get-res', 'o-log');
+}
+
+async function updateOrder() {
+  const id = document.getElementById('o-up-id').value;
+  const body = { status: document.getElementById('o-up-status').value };
+  await api('PATCH', '/order/' + id, body, 'o-up-res', 'o-log');
+}
+</script>
+
+</body>
+</html>
