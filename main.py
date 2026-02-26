@@ -16,10 +16,31 @@ BASE_URL = "http://127.0.0.1:8000"
 
 
 def start_server():
+    """Start the FastAPI server.
+
+    Runs the uvicorn server with the configured FastAPI application
+    on localhost port 8000.
+
+    Returns:
+        None
+    """
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="error")
 
 
 def check(label, response, expected_status):
+    """Check and display HTTP response status.
+
+    Compares the actual HTTP response status code against the expected
+    value and prints the result with the response body if available.
+
+    Parameters:
+        label (str): Description of the test case.
+        response: HTTP response object from httpx.
+        expected_status (int): Expected HTTP status code.
+
+    Returns:
+        None
+    """
     status = "✓" if response.status_code == expected_status else "✗"
     print(f"\n{status} {label}")
     print(f"  → status  : {response.status_code} (attendu {expected_status})")
